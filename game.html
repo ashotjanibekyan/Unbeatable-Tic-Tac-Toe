@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title></title>
+</head>
+<body>
+	<canvas id="tic" width=500 height=500></canvas>
+	<script>
+		const board = [
+			['', '', ''],
+			['', '', ''],
+			['', '', '']
+		];
+		let isHuman = true;
+
+		const stupidNextMove = function(board) {
+			for(let i = 0; i < board.length; i++) {
+				for(let j = 0; j < board.length; j++) {
+					if(board[i][j] === '') {
+						return [i, j];
+					}
+				}
+			}
+		};
+
+		const makeMove = function(board, coords, isX) {
+			if((coords[0] === 0 || coords[0] === 1 || coords[0] === 2) && (coords[1] === 0 || coords[1] === 1 || coords[1] === 2) ) {
+				const XorO = isX ? 'x': 'o';
+				board[coords[0]][coords[1]] = XorO;
+				return 0;
+			}
+			return -1;
+		};
+
+		const findWinner = function(board) {
+			//horizontally
+			for(let i = 0; i < board.length; i++){
+				if(board[i][0] !== '' && (board[i][0] + board[i][1] + board[i][2] === board[i][0] + board[i][0] + board[i][0])) {
+					return {
+						winner: board[i][0],
+						winningLocations: [[i, 0], [i, 1], [i, 2]]
+					};
+				}
+			}
+			//vertical
+			for(let i = 0; i < board.length; i++){
+				if(board[0][i] !== '' && (board[0][i] + board[1][i] + board[2][i] === board[0][i] + board[0][i] + board[0][i])) {
+					return {
+						winner: board[0][i],
+						winningLocations: [[0, i], [1, i], [2, i]]
+					};
+				}
+			}
+
+			if(board[0][0] !== '' && (board[0][0] + board[1][1] + board[2][2] === board[0][0] + board[0][0] + board[0][0])) {
+				return {
+					winner: board[0][0],
+					winningLocations: [[0, 0], [1, 1], [2, 2]]
+				};
+			}
+
+			if(board[0][2] !== '' && (board[0][2] + board[1][1] + board[2][0] === board[0][2] + board[0][2] + board[0][2])) {
+				return {
+					winner: board[0][0],
+					winningLocations: [[0, 2], [1, 1], [2, 0]]
+				};
+			}
+
+			if(board.toString().search(/([xo],){8}[xo]/) !== -1){
+				return {
+					winner: 'nobody' // nobody won, game over
+				}
+			}
+			return undefined; // :D I know that this line is stupid, but just to emphasize that this function can return undefined and it has a meaning
+		};
+
+
+		const canvas = document.getElementById('tic');
+		const tic = canvas.getContext('2d');
+
+		const drawLines = function (lineWidth, strokeStyle) {
+		  const lineStart = 4;
+		  const lineLenght = canvas.width - 5;
+		  tic.lineWidth = lineWidth;
+		  tic.lineCap = 'round';
+		  tic.strokeStyle = strokeStyle;
+		  tic.beginPath();
+
+		  for (let y = 0; y <= 3;y++) {  
+			tic.moveTo(lineStart, y * canvas.width / 3);
+			tic.lineTo(lineLenght, y * canvas.width / 3);
+		  }
+
+		  for (let x = 0;x <= 3;x++) {
+			tic.moveTo(x * canvas.width / 3, lineStart);
+			tic.lineTo(x * canvas.width / 3, lineLenght);
+		  }
+
+		  tic.stroke();
+		}
+
+		const drawX = function(x, y) {
+		  tic.strokeStyle = "#f1be32";
+		  tic.beginPath();
+		  tic.moveTo(x + 50, y + 50);
+		  tic.lineTo(x + canvas.width / 3 - 50, y + canvas.width / 3 - 50);
+		  tic.moveTo(x + 50, y + canvas.width / 3 - 50);
+		  tic.lineTo(x + canvas.width / 3 - 50, y + 50);
+		  tic.stroke();
+		};
+
+		const drawO = function(x, y) {
+		  tic.lineWidth = 10;
+		  tic.strokeStyle = "#01bBC2";
+		  tic.beginPath();
+		  tic.arc(x + (0.5 * canvas.width / 3),  y + (0.5 * canvas.width / 3), (canvas.width / 3 - 100) / 2, 0, 2 * Math.PI);
+		  tic.stroke();
+		};
+
+		drawLines(10, '#001f3f');
+		const first = function() {
+			if(!isHuman) {
+				const next = stupidNextMove(board);
+				if(makeMove(board, next) === 0) {
+					makeMove(board, next);
+					drawO(next[1] * (canvas.width / 3), next[0] * (canvas.width / 3));
+				}
+			}
+			isHuman = !isHuman;
+		};
+		first()
+		let isWin = false;
+		let isFirst = false;
+		canvas.addEventListener('mousedown', function(e) {
+			if(board[Math.floor(e.offsetY/(canvas.width / 3))][Math.floor(e.offsetX/(canvas.width / 3))] === '') {
+				board[Math.floor(e.offsetY/(canvas.width / 3))][Math.floor(e.offsetX/(canvas.width / 3))] = 'x';
+				drawX(Math.floor(e.offsetX/(canvas.width / 3)) * (canvas.width / 3), 
+				  Math.floor(e.offsetY/(canvas.width / 3)) * (canvas.width / 3));
+			}
+			isFirst = false
+			if(isWin) {
+				for(let i = 0; i < board.length; i++) {
+					for(let j = 0; j < board.length; j++) {
+						board[i][j] = '';
+					}
+				}
+				tic.clearRect(0, 0, canvas.width, canvas.height);
+				drawLines(10, '#001f3f');
+				isWin = false;
+				first();
+				isFirst = true;
+			}
+			if(findWinner(board)) {
+				isWin = true;
+			}
+		});
+		canvas.addEventListener('mouseup', function(e) {
+			if(!isFirst && !isWin) {
+				const next = stupidNextMove(board);
+				if(makeMove(board, next) === 0) {
+					makeMove(board, next);
+					drawO(next[1] * (canvas.width / 3), next[0] * (canvas.width / 3));
+				}
+				if(findWinner(board)) {
+					isWin = true;
+				}
+			}
+		});
+	</script>
+</body>
+</html>
