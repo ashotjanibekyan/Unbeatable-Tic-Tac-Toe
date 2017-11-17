@@ -121,6 +121,9 @@
                 return [2, 1];
               }
             }
+            if(board[1][1] === 'x' && board[2][2] === 'x') {		
+                return [2, 0]		
+            }
           }
 
           return allLegalMoves(board)[Math.floor(Math.random() * (allLegalMoves(board).length))];
